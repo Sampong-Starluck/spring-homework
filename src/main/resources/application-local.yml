@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5434/learn_spring
+    username: postgres
+    password: S@mpong_3788
+    hikari:
+      auto-commit: true
+      connection-timeout: 30000
+      idle-timeout: 30000
+      max-lifetime: 2000000
+      maximum-pool-size: 100
+      minimum-idle: 10
+      pool-name: hikari-books
+      allow-pool-suspension: true

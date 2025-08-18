@@ -1,0 +1,5 @@
+spring:
+    application:
+        name: spring-learning
+    profiles:
+      active: ${'@spring.profiles.active@':dev}
