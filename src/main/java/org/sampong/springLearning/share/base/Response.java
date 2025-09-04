@@ -1,12 +1,12 @@
 package org.sampong.springLearning.share.base;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import org.springframework.stereotype.Component;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Response {
     private Integer status;
     private String message;

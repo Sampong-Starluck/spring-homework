@@ -7,13 +7,12 @@ import java.util.Map;
 
 @Component
 public record BaseResponse() {
-    public static Response resObj;
     public Map<String, Object> response(Object obj) {
         var res = new HashMap<String, Object>();
-        res.put("response", resObj.success());
+        res.put("response", Response.success());
         res.put("result", obj);
         if (obj == null) {
-            res.put("response", resObj.error());
+            res.put("response", Response.error());
             return res;
         }
         return res;
@@ -21,7 +20,7 @@ public record BaseResponse() {
 
     public Map<String, Object> responseCode(int code, String msg) {
         var res = new HashMap<String, Object>();
-        res.put("response", resObj.success());
+        res.put("response", Response.success());
         res.put("code", code);
         res.put("msg", msg);
         return res;

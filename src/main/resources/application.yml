@@ -1,5 +1,29 @@
 spring:
-    application:
+#  main:
+#    allow-circular-references: true
+  application:
         name: spring-learning
-    profiles:
+  profiles:
       active: ${'@spring.profiles.active@':dev}
+  mvc:
+      pathmatch:
+          matching-strategy: path_pattern_parser
+
+app:
+  allow:
+    origin: [ "*" ]
+    method: [ "GET", "PUT", "POST", "DELETE", "PATCH" ]
+    header:
+      allowed: [
+        "Origin", "Access-Control-Allow-Origin", "Content-Type", "Accept",
+        "Authorization", "Origin,Accept", "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+      ]
+      exposed: [
+        "Origin", "Content-Type", "Accept", "Authorization", "Access-Control-Allow-Origin"
+      ]
+    routes:
+      ignore: [
+        "/v1/api/web/auth/register",
+        "/v1/api/web/auth/login",
+      ]
