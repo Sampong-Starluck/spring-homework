@@ -10,7 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/api")
+@RequestMapping("/v1/api/web/account")
 public class AccountController {
     private final AccountService service;
     private final BaseResponse response;
