@@ -82,8 +82,6 @@ public class UserServiceImp implements UserService {
         var user = userOpt.orElseThrow(() ->
                 new CustomException(HttpStatus.NOT_FOUND, "User not found: " + usernameOrEmail));
 
-//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user, password));
-//        var userDetail = authentication.getPrincipal();
         // ✅ Generate JWT
         return jwtUtil.generateToken(user);
     }

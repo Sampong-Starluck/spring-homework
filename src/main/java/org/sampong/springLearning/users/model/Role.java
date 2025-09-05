@@ -9,7 +9,7 @@ import org.sampong.springLearning.share.base.BaseEntity;
 import org.sampong.springLearning.share.enumerate.RoleStatus;
 
 @Entity
-@Table(name = "users")
+@Table(name = "role")
 @Getter
 @Setter
 @NoArgsConstructor

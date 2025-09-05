@@ -41,20 +41,20 @@ public class WebSecurityConfig {
     private final AppProperty property;
     private final JwtFilter jwtFilter; // no @Lazy needed
 
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+//    @Bean
+//    public BCryptPasswordEncoder passwordEncoder() {
+//        return new BCryptPasswordEncoder();
+//    }
 
-    @Bean
-    public AuthenticationManager authenticationManager(
-            UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
-        authenticationProvider.setPasswordEncoder(passwordEncoder);
-
-        return new ProviderManager(authenticationProvider);
-    }
+//    @Bean
+//    public AuthenticationManager authenticationManager(
+//            UserDetailsService userDetailsService,
+//            PasswordEncoder passwordEncoder) {
+//        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
+//        authenticationProvider.setPasswordEncoder(passwordEncoder);
+//
+//        return new ProviderManager(authenticationProvider);
+//    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

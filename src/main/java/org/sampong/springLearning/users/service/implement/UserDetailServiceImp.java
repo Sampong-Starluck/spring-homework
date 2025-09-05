@@ -1,13 +1,33 @@
 package org.sampong.springLearning.users.service.implement;
 
+import lombok.RequiredArgsConstructor;
+import org.sampong.springLearning.share.enumerate.RoleStatus;
+import org.sampong.springLearning.share.exception.CustomException;
+import org.sampong.springLearning.share.utils.JwtUtil;
 import org.sampong.springLearning.users.model.UserDetail;
+import org.sampong.springLearning.users.repository.UserDetailRepository;
+import org.sampong.springLearning.users.repository.UserRepository;
 import org.sampong.springLearning.users.service.UserDetailService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserDetailServiceImp implements UserDetailService {
+
+    private final UserRepository repository;
+    private final UserDetailRepository userDetailRepository;
+    private final JwtUtil jwtUtil;
+    private final BCryptPasswordEncoder passwordEncoder;
+
     @Override
     public Optional<UserDetail> findById(Long id) {
         return Optional.empty();
@@ -31,5 +51,25 @@ public class UserDetailServiceImp implements UserDetailService {
     @Override
     public void delete(Long id) {
 
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return Optional.ofNullable(repository.findByUsername(username))
+                .or(() -> Optional.ofNullable(repository.findByEmail(username)))
+                .map(user -> User.builder()
+                        .username(user.getUsername())
+                        .password(user.getPassword())
+                        .authorities(getAuthorities(user.getRoleStatus()))
+                        .build())
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+
+
+    private List<SimpleGrantedAuthority> getAuthorities(List<RoleStatus> roles) {
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .toList();
     }
 }
