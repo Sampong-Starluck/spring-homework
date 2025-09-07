@@ -7,12 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.sampong.springLearning.share.base.BaseEntity;
 import org.sampong.springLearning.share.enumerate.RoleStatus;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -30,6 +25,10 @@ public class Users extends BaseEntity {
     private String password = null;
     private String email = null;
     private String phone = null;
+    private Boolean enabled = true;
+    private Boolean accountNonExpired = true;
+    private Boolean credentialsNonExpired = true;
+    private Boolean accountNonLocked = true;
     private List<RoleStatus>  roleStatus = new ArrayList<>();
 
     @OneToOne(cascade = {CascadeType.ALL}, mappedBy = "user")

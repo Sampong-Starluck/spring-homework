@@ -34,25 +34,16 @@ public class UserServiceImp implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) {
-        return Optional.ofNullable(repository.findByUsername(username))
-                .or(() -> Optional.ofNullable(repository.findByEmail(username)))
-                .map(user -> User.builder()
-                        .username(user.getUsername())
-                        .password(user.getPassword())
-                        .authorities(getAuthorities(user.getRoleStatus()))
-                        .build())
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found"));
-    }
-
-
-    @Override
     public Users createUser(CreateUserRequest user) {
         var users = new Users();
         users.setUsername(user.getFirstName()+"_"+user.getLastName());
         users.setPassword(passwordEncoder.encode(user.getPassword()));
         users.setEmail(user.getEmail());
         users.setRoleStatus(user.getRoles());
+        users.setEnabled(true);
+        users.setAccountNonExpired(true);
+        users.setAccountNonLocked(true);
+        users.setCredentialsNonExpired(true);
         var existUsername = repository.existsByUsernameAndStatusTrue(users.getUsername());
         var existEmail = repository.existsByEmailAndStatusTrue(users.getEmail());
         if (existUsername || existEmail) {

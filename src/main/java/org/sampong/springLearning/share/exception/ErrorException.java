@@ -1,11 +1,13 @@
 package org.sampong.springLearning.share.exception;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class ErrorException {
 
     // Getters and Setters
@@ -16,12 +18,6 @@ public class ErrorException {
     public ErrorException() {
         this.status = HttpStatus.UNAUTHORIZED.value();
         this.error = HttpStatus.UNAUTHORIZED.name();
-    }
-
-    public ErrorException(Integer status, String error, String message) {
-        this.status = status;
-        this.error = error;
-        this.message = message;
     }
 
 }

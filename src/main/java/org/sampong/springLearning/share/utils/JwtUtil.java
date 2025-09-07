@@ -2,11 +2,10 @@ package org.sampong.springLearning.share.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.sampong.springLearning.share.enumerate.RoleStatus;
 import org.sampong.springLearning.share.exception.CustomException;
 import org.sampong.springLearning.users.controller.dto.response.Context;
@@ -14,47 +13,70 @@ import org.sampong.springLearning.users.controller.dto.response.JwtResponse;
 import org.sampong.springLearning.users.model.Users;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
     @Value("${jwt.secret:mySecretKey}")
     private String secret;
     @Value("${jwt.expiration:86400}") // 24 hours in seconds
     private Long expiration;
 
-    public String getUserFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+//    private final JwtParser parser = Jwts.parser().verifyWith(getSigningKey()).build();
+    private final ObjectMapper objectMapper;
+    private final String expectedAlg =Jwts.SIG.HS256.getId();
+
+    public Context parseContext(String token) throws JsonProcessingException {
+        return objectMapper.readValue(getClaimFromToken(token, Claims::getSubject), Context.class);
     }
 
-    public Claims getAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    public List<SimpleGrantedAuthority> parseAuthorities(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        Object raw = claims.get("authorities");
+        if (!(raw instanceof List<?> list))
+            return List.of();
+
+        if (list.isEmpty()) return List.of();
+
+        Object first = list.getFirst();
+        if (first instanceof String) {
+            return list.stream()
+                    .map(Object::toString)
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+        } else if (first instanceof Map) {
+            return list.stream()
+                    .map(o -> ((Map<?,?>) o).get("authority"))
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
         return claimsResolver.apply(getAllClaimsFromToken(token));
     }
 
-    private Claims getAllClaimsFromToken(String token)  {
+    private Claims getAllClaimsFromToken(String token) throws ExpiredJwtException  {
         try{
-            return Jwts.parser()
+            var jws = Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                    .parseSignedClaims(token);
+            String alg = jws.getHeader().getAlgorithm();
+            if (!expectedAlg.equals(alg)) {
+                throw new JwtException("Unexpected JWT alg: " + alg);
+            }
+            return jws.getPayload();
         }catch(ExpiredJwtException e){
             System.out.println(e.getMessage());
             throw new CustomException(HttpStatus.UNAUTHORIZED, "token expired");
@@ -69,7 +91,7 @@ public class JwtUtil {
         var subject = new ObjectMapper().writeValueAsString(context);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", getAuthorities(req.getRoleStatus()));
+        claims.put("authorities", getAuthorities(req.getRoleStatus()));
 
         return doGenerateToken(claims, subject);
     }
@@ -112,11 +134,19 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-
-
     private List<SimpleGrantedAuthority> getAuthorities(List<RoleStatus> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .toList();
+                .filter(Objects::nonNull)
+                .map(RoleStatus::name)
+                .map(String::trim)
+                .map(String::toUpperCase)
+//                .map(name -> name.startsWith("ROLE_") ? name : "ROLE_" + name)
+                .distinct()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 }

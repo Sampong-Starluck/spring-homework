@@ -1,6 +1,4 @@
 spring:
-#  main:
-#    allow-circular-references: true
   application:
         name: spring-learning
   profiles:
@@ -23,7 +21,6 @@ app:
         "Origin", "Content-Type", "Accept", "Authorization", "Access-Control-Allow-Origin"
       ]
     routes:
-      ignore: [
-        "/v1/api/web/auth/register",
-        "/v1/api/web/auth/login",
-      ]
+      ignore:
+        - "/v1/api/web/auth/register"
+        - "/v1/api/web/auth/login"

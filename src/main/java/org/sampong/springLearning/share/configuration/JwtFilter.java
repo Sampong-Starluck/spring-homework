@@ -1,83 +1,116 @@
 package org.sampong.springLearning.share.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
-import org.sampong.springLearning.share.enumerate.RoleStatus;
 import org.sampong.springLearning.share.utils.JwtUtil;
 import org.sampong.springLearning.users.controller.dto.response.Context;
-import org.sampong.springLearning.users.service.UserDetailService;
-import org.sampong.springLearning.users.service.implement.UserServiceImp;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
 
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
+
+    // Utility to validate/parse JWT and extract claims/authorities.
     private final JwtUtil jwtUtil;
-    @Lazy
-    private final UserDetailsService userServiceImp;
+    // Local user lookup (DB/cache). Used to validate account state.
+    private final UserDetailsService userDetailsService; // cached wrapper
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest req,
+                                    HttpServletResponse res,
+                                    FilterChain chain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        var role = new ArrayList<RoleStatus>();
-        var mapper = new ObjectMapper();
-        var context = new Context();
+        // Read Authorization header
+        String header = req.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String jwtToken = authHeader.substring(7);
+        // If no Bearer token present, don't authenticate here — continue.
+        // This allows public endpoints or other filters to handle the request.
+        if (header == null || !header.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        // Strip "Bearer " prefix
+        String token = header.substring(7);
+
+        Context ctx;
+        try {
+            // Validate token (signature, expiry, etc.) and parse core claims.
+            // jwtUtil.parseContext(...) should throw on invalid/expired tokens.
+            ctx = jwtUtil.parseContext(token); // single parse+validate
+        } catch (ExpiredJwtException e) {
+            // Token expired -> return 401
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token expired");
+            return;
+        } catch (JwtException e) {
+            // Any other JWT parsing/validation error -> 401
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
+            return;
+        }
+
+        // Only set authentication if token contained a username and
+        // there is no Authentication already in the SecurityContext.
+        if (ctx.getUsername() != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             try {
-                if (!jwtUtil.validateToken(jwtToken)) {
-                    // Extract claims
-                    logger.error("Invalid JWT Token");
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
+                // Load user from local store. This ensures the user still
+                // exists and allows checking account flags (enabled/locked).
+                UserDetails ud = userDetailsService.loadUserByUsername(ctx.getUsername());
+
+                // Reject disabled/locked accounts
+                if (!ud.isEnabled() || !ud.isAccountNonLocked()) {
+                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not allowed");
                     return;
-                } else {
-                    context = mapper.readValue(jwtUtil.getUserFromToken(jwtToken), Context.class);
                 }
-            } catch (ExpiredJwtException e) {
-                logger.error("JWT Token has expired", e);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token expired");
-                return;
-            } catch (Exception e) {
-                logger.error("Invalid JWT Token", e);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
+
+                // Convert token claim(s) into GrantedAuthority objects.
+                // IMPORTANT: jwtUtil.parseAuthorities(token) must return concrete
+                // GrantedAuthority instances (e.g. SimpleGrantedAuthority) and
+                // the authority strings must match your @PreAuthorize checks
+                // (e.g. "ROLE_ADMIN" vs "ADMIN").
+                Collection<? extends GrantedAuthority> authorities = jwtUtil.parseAuthorities(token);
+
+                // Create Authentication. Current code uses the username as
+                // principal; consider using the full UserDetails (ud) if
+                // you need access to user properties later:
+                //   new UsernamePasswordAuthenticationToken(ud, null,
+                //                                         authorities)
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(ud.getUsername(), null, authorities);
+
+                // Attach request details (IP, session id...) to the token
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+
+                // Persist Authentication in SecurityContext for downstream use
+                SecurityContextHolder.getContext().setAuthentication(auth);
+
+            } catch (UsernameNotFoundException ex) {
+                // If the user referenced in the token doesn't exist locally,
+                // treat token as invalid.
+                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
                 return;
             }
-        } else {
-            logger.debug("No Bearer token found in Authorization header");
-            request.setAttribute("invalid", "Required full authentication");
         }
 
-        if (context.getUsername() != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            var userDetails = userServiceImp.loadUserByUsername(context.getUsername());
-            if (userDetails != null) {
-                var userPassAuth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                userPassAuth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(userPassAuth);
-            }
-        }
-
-        filterChain.doFilter(request, response);
+        // Proceed with the filter chain
+        chain.doFilter(req, res);
     }
 }

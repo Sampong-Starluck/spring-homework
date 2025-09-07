@@ -19,7 +19,7 @@ public class AccountServiceImp implements AccountService {
     @Override
     @Logger("Find by id service")
     public Optional<Account> findById(Long id) {
-        return Optional.of(repository.findById(id)).orElseThrow(() ->
+        return Optional.ofNullable(repository.findByIdAndStatusTrue(id)).orElseThrow(() ->
                 new CustomException(HttpStatus.NOT_FOUND, "Account " + id + " not found")
         );
     }
