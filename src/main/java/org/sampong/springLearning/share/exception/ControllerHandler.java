@@ -1,5 +1,6 @@
 package org.sampong.springLearning.share.exception;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -43,7 +44,7 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
-    ResponseEntity<?> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+    ResponseEntity<?> handle(AuthorizationDeniedException ex) {
         Map<String, Object> response = new HashMap<>();
         var map = new HashMap<String, Object>();
         map.put("status", HttpStatus.FORBIDDEN.value());
@@ -53,8 +54,19 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @ExceptionHandler(ExpiredJwtException.class)
+    ResponseEntity<?> handle(ExpiredJwtException ex) {
+        Map<String, Object> response = new HashMap<>();
+        var map = new HashMap<String, Object>();
+        map.put("status", HttpStatus.UNAUTHORIZED.value());
+        map.put("message", "Token has expired");
+        map.put("error", HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        response.put("response", map);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @ExceptionHandler(CustomException.class)
-    ResponseEntity<?> handleCustomException(CustomException ex) {
+    ResponseEntity<?> handle(CustomException ex) {
         Map<String, Object> response = new HashMap<>();
         var map = new HashMap<String, Object>();
         map.put("status", ex.getStatus());

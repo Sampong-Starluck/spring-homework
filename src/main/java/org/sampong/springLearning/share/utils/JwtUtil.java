@@ -29,9 +29,9 @@ public class JwtUtil {
     @Value("${jwt.expiration:86400}") // 24 hours in seconds
     private Long expiration;
 
-//    private final JwtParser parser = Jwts.parser().verifyWith(getSigningKey()).build();
+    //    private final JwtParser parser = Jwts.parser().verifyWith(getSigningKey()).build();
     private final ObjectMapper objectMapper;
-    private final String expectedAlg =Jwts.SIG.HS256.getId();
+    private final String expectedAlg = Jwts.SIG.HS256.getId();
 
     public Context parseContext(String token) throws JsonProcessingException {
         return objectMapper.readValue(getClaimFromToken(token, Claims::getSubject), Context.class);
@@ -53,7 +53,7 @@ public class JwtUtil {
                     .collect(Collectors.toList());
         } else if (first instanceof Map) {
             return list.stream()
-                    .map(o -> ((Map<?,?>) o).get("authority"))
+                    .map(o -> ((Map<?, ?>) o).get("authority"))
                     .filter(Objects::nonNull)
                     .map(Object::toString)
                     .map(SimpleGrantedAuthority::new)
@@ -66,21 +66,17 @@ public class JwtUtil {
         return claimsResolver.apply(getAllClaimsFromToken(token));
     }
 
-    private Claims getAllClaimsFromToken(String token) throws ExpiredJwtException  {
-        try{
-            var jws = Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token);
-            String alg = jws.getHeader().getAlgorithm();
-            if (!expectedAlg.equals(alg)) {
-                throw new JwtException("Unexpected JWT alg: " + alg);
-            }
-            return jws.getPayload();
-        }catch(ExpiredJwtException e){
-            System.out.println(e.getMessage());
-            throw new CustomException(HttpStatus.UNAUTHORIZED, "token expired");
+    private Claims getAllClaimsFromToken(String token) throws ExpiredJwtException {
+        var jws = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token);
+        String alg = jws.getHeader().getAlgorithm();
+        if (!expectedAlg.equals(alg)) {
+            throw new JwtException("Unexpected JWT alg: " + alg);
         }
+        return jws.getPayload();
+
     }
 
     /**

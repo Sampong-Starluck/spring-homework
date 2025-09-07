@@ -12,4 +12,7 @@ public interface UserService {
     Users createUser(CreateUserRequest user);
     JwtResponse login(JwtRequest req) throws JsonProcessingException;
     JwtResponse register(CreateUserRequest req) throws JsonProcessingException;
+
+    Users getUserInfo();
+    Users findById(Long id);
 }

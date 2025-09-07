@@ -52,24 +52,4 @@ public class UserDetailServiceImp implements UserDetailService {
     public void delete(Long id) {
 
     }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) {
-        return Optional.ofNullable(repository.findByUsername(username))
-                .or(() -> Optional.ofNullable(repository.findByEmail(username)))
-                .map(user -> User.builder()
-                        .username(user.getUsername())
-                        .password(user.getPassword())
-                        .authorities(getAuthorities(user.getRoleStatus()))
-                        .build())
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found"));
-    }
-
-
-
-    private List<SimpleGrantedAuthority> getAuthorities(List<RoleStatus> roles) {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .toList();
-    }
 }

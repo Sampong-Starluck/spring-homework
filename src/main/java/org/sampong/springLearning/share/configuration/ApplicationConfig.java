@@ -2,6 +2,7 @@ package org.sampong.springLearning.share.configuration;
 
 import lombok.RequiredArgsConstructor;
 import org.sampong.springLearning.share.exception.CustomException;
+import org.sampong.springLearning.users.model.Users;
 import org.sampong.springLearning.users.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

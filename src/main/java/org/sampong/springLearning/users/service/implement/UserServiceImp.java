@@ -2,7 +2,7 @@ package org.sampong.springLearning.users.service.implement;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
-import org.sampong.springLearning.share.enumerate.RoleStatus;
+import org.sampong.springLearning.share.configuration.AuditingConfig;
 import org.sampong.springLearning.share.exception.CustomException;
 import org.sampong.springLearning.share.utils.JwtUtil;
 import org.sampong.springLearning.users.controller.dto.request.CreateUserRequest;
@@ -14,14 +14,9 @@ import org.sampong.springLearning.users.repository.UserDetailRepository;
 import org.sampong.springLearning.users.repository.UserRepository;
 import org.sampong.springLearning.users.service.UserService;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -32,6 +27,7 @@ public class UserServiceImp implements UserService {
     private final UserDetailRepository userDetailRepository;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final AuditingConfig auditor;
 
     @Override
     public Users createUser(CreateUserRequest user) {
@@ -83,9 +79,16 @@ public class UserServiceImp implements UserService {
         return jwtUtil.generateToken(createdUser);
     }
 
-    private List<SimpleGrantedAuthority> getAuthorities(List<RoleStatus> roles) {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .toList();
+    @Override
+    public Users getUserInfo() {
+        var user = auditor.getCurrentAuditor().orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Token has expired or user not exist"));
+        return Optional.ofNullable(repository.findByUsername(user.getUsername()))
+                .or(() -> Optional.ofNullable(repository.findByEmail(user.getUsername())))
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND,"User not found"));
+    }
+
+    @Override
+    public Users findById(Long id) {
+        return repository.findByIdAndStatusTrue(id).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found: " + id));
     }
 }

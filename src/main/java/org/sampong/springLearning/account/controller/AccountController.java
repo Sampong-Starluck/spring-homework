@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.sampong.springLearning.account.model.Account;
 import org.sampong.springLearning.account.service.AccountService;
 import org.sampong.springLearning.share.base.BaseResponse;
+import org.sampong.springLearning.share.constant.AppConstants;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/api/web/account")
+@RequestMapping(AppConstants.WEB_PATH +"/account")
 @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
 public class AccountController {
     private final AccountService service;

@@ -4,6 +4,7 @@ package org.sampong.springLearning.users.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.sampong.springLearning.share.base.BaseResponse;
+import org.sampong.springLearning.share.constant.AppConstants;
 import org.sampong.springLearning.share.exception.CustomException;
 import org.sampong.springLearning.users.controller.dto.request.CreateUserRequest;
 import org.sampong.springLearning.users.controller.dto.request.JwtRequest;
@@ -22,7 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/api/web/auth")
+@RequestMapping(AppConstants.WEB_PATH +"/auth")
 public class AuthController {
     private final UserService service;
     private final BaseResponse response;

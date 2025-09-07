@@ -91,10 +91,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 // Create Authentication. Current code uses the username as
                 // principal; consider using the full UserDetails (ud) if
                 // you need access to user properties later:
-                //   new UsernamePasswordAuthenticationToken(ud, null,
-                //                                         authorities)
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(ud.getUsername(), null, authorities);
+                //   new UsernamePasswordAuthenticationToken(ud, null, authorities)
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(ud, null, authorities);
 
                 // Attach request details (IP, session id...) to the token
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
