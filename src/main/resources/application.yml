@@ -6,7 +6,13 @@ spring:
   mvc:
       pathmatch:
           matching-strategy: path_pattern_parser
-
+# src/main/resources/application.yml
+logging:
+  pattern:
+    console: >-
+      %clr(%d{yyyy-MM-dd HH:mm:ss}){cyan} %clr(%-5level)
+      %clr(${PID:- }){magenta} %clr(---){faint} %clr(%-40.40logger{39}){yellow}
+      %clr(-){faint} %msg%n%clr(%wEx)
 app:
   allow:
     origin: [ "*" ]
@@ -24,3 +30,38 @@ app:
       ignore:
         - "/v1/api/web/auth/register"
         - "/v1/api/web/auth/login"
+        - "/v3/api-docs/**"
+        - "/v3/swagger-ui/**"
+
+swaggerdoc:
+  title: MyApp
+  version: 1.1.1
+  servers:
+    - url: http://localhost:8080
+      description: Local
+    - url: https://staging.myapp.com
+      description: Staging
+    - url: https://api.myapp.com
+      description: Production
+  groups:
+    - name: account
+      packageName: org.sampong.springLearning.account.controller
+    - name: user
+      packageName: org.sampong.springLearning.users.controller
+springdoc:
+  api-docs:
+    groups:
+      enabled: true
+    version: openapi_3_1
+    enabled: true
+  cache:
+    disabled: false
+  swagger-ui:
+    defaultModelsExpandDepth: -1
+    doc-expansion: none
+    enabled: true
+    tagsSorter: alpha
+    groups-order: DESC
+    disable-swagger-default-url: true
+    use-root-path: true
+    path: /v3/swagger-ui
